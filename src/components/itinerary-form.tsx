@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import PlacesAutocomplete from "./places-autocomplete";
 
 interface ItineraryFormProps {
   onSubmit: (data: z.infer<typeof FormSchema>) => void;
@@ -87,7 +88,10 @@ export default function ItineraryForm({
                   <FormItem>
                     <FormLabel>Destination</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Paris, France" {...field} />
+                      <PlacesAutocomplete
+                        value={field.value}
+                        onChange={(value) => field.onChange(value)}
+                      />
                     </FormControl>
                     <FormDescription>
                       Where do you want to go?
