@@ -32,71 +32,26 @@ interface ItineraryDisplayProps {
   onReset: () => void;
 }
 
-type TimelineItem = {
-  text: string;
-  type: "travel" | "accommodation" | "activity";
-  icon: React.ElementType;
-};
-
-type DayEntry = {
-  title: string;
-  items: TimelineItem[];
-};
-
 const iconMap = {
   travel: Plane,
   accommodation: Hotel,
   activity: MapPin,
 };
 
-const parseTimeline = (timeline: string): DayEntry[] => {
-  if (!timeline) return [];
-
-  const entries: DayEntry[] = [];
-  const dayBlocks = timeline.split(/(?=^Day \d+.*$)/im);
-
-  dayBlocks.forEach((block) => {
-    const lines = block.trim().split('\n');
-    if (lines.length === 0 || !lines[0].trim().startsWith("Day")) return;
-
-    const title = lines.shift()!.trim();
-    const items: TimelineItem[] = [];
-
-    lines.forEach(line => {
-      const trimmedLine = line.trim().replace(/^- /, "");
-      if (!trimmedLine) return;
-      
-      let type: TimelineItem['type'] = "activity";
-
-      if (trimmedLine.toLowerCase().includes("arrive") || trimmedLine.toLowerCase().includes("flight") || trimmedLine.toLowerCase().includes("train")) {
-        type = "travel";
-      } else if (trimmedLine.toLowerCase().includes("check in") || trimmedLine.toLowerCase().includes("accommodation")) {
-        type = "accommodation";
-      }
-
-      items.push({
-        text: trimmedLine,
-        type: type,
-        icon: iconMap[type],
-      });
-    });
-
-    if (title || items.length > 0) {
-      entries.push({ title: title || `Day ${entries.length + 1}`, items });
-    }
-  });
-
-  return entries;
-};
-
 export default function ItineraryDisplay({
   itinerary,
   onReset,
 }: ItineraryDisplayProps) {
-  const parsedTimeline = useMemo(
-    () => parseTimeline(itinerary.timeline),
-    [itinerary.timeline]
-  );
+  const parsedTimeline = useMemo(() => {
+    if (!itinerary.timeline) return [];
+    return itinerary.timeline.map(day => ({
+      ...day,
+      items: day.items.map(item => ({
+        ...item,
+        icon: iconMap[item.type] || MapPin
+      }))
+    }))
+  }, [itinerary.timeline]);
 
   return (
     <div className="w-full max-w-5xl mx-auto space-y-8">
@@ -119,7 +74,7 @@ export default function ItineraryDisplay({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {parsedTimeline.length > 0 ? (
+              {parsedTimeline && parsedTimeline.length > 0 ? (
                  <Accordion type="single" collapsible defaultValue="day-0" className="w-full">
                   {parsedTimeline.map((day, dayIndex) => (
                     <AccordionItem value={`day-${dayIndex}`} key={dayIndex}>
@@ -146,9 +101,7 @@ export default function ItineraryDisplay({
                  </Accordion>
               ) : (
                 <p className="text-muted-foreground">
-                  The AI couldn't generate a detailed daily timeline. Here's the raw output:
-                  <br /><br />
-                  <span className="whitespace-pre-wrap bg-muted/50 p-4 rounded-md block">{itinerary.timeline}</span>
+                  The AI couldn't generate a detailed daily timeline.
                 </p>
               )}
             </CardContent>
