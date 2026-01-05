@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import PlacesAutocomplete, {
   geocodeByAddress,
   getLatLng,
@@ -16,6 +16,14 @@ export default function PlacesAutocompleteComponent({
   value,
   onChange,
 }: PlacesAutocompleteProps) {
+  const [isGoogleMapsApiAvailable, setIsGoogleMapsApiAvailable] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.google?.maps?.places) {
+      setIsGoogleMapsApiAvailable(true);
+    }
+  }, []);
+
   const handleSelect = async (address: string) => {
     onChange(address);
     try {
@@ -27,8 +35,6 @@ export default function PlacesAutocompleteComponent({
     }
   };
 
-  const isGoogleMapsApiAvailable =
-    typeof window !== "undefined" && window.google?.maps?.places;
 
   if (!isGoogleMapsApiAvailable) {
     console.warn("Google Maps API not loaded. Falling back to simple input.");
