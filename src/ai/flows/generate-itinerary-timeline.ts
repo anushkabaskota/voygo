@@ -34,9 +34,13 @@ const generateItineraryTimelinePrompt = ai.definePrompt({
   name: 'generateItineraryTimelinePrompt',
   input: {schema: GenerateItineraryTimelineInputSchema},
   output: {schema: GenerateItineraryTimelineOutputSchema},
-  prompt: `Based on the following user preferences: {{{preferences}}}, arrange the following travel options: {{{travelOptions}}}, accommodation options: {{{accommodationOptions}}}, and tourist attractions: {{{touristAttractions}}} into an interactive timeline and route map.
+  prompt: `You are a professional travel planner creating a detailed, realistic travel itinerary.
 
-Create a timeline that incorporates travel, accommodation, and attractions in a sensible order, creating a comprehensive itinerary.
+Based on the following user preferences: {{{preferences}}}, arrange the following travel options: {{{travelOptions}}}, accommodation options: {{{accommodationOptions}}}, and tourist attractions: {{{touristAttractions}}} into a daily timeline and route map.
+
+Use the specific names of hotels, restaurants, and attractions provided. Do not use generic phrases like "a luxury hotel" or "a local restaurant".
+
+Create a timeline that incorporates travel, accommodation, and attractions in a sensible order, creating a comprehensive itinerary. Each day should be a list of activities.
 Create a description of a route map that shows how to get to each thing in the timeline, and incorporate methods of transit.
 
 Output the timeline, followed by the route map.

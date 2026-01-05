@@ -45,14 +45,14 @@ const travelOptionsPrompt = ai.definePrompt({
   name: 'travelOptionsPrompt',
   input: {schema: ScrapeAndSummarizeTravelOptionsInputSchema},
   output: {schema: SummaryOutputSchema},
-  prompt: `You are an expert travel assistant. Your task is to find and summarize travel options based on the user's preferences.
+  prompt: `You are an expert travel assistant. Your task is to find and summarize travel options based on the user's preferences. Provide real, verifiable examples.
 
   Destination: {{{destination}}}
   Dates: {{{dates}}}
   Budget: {{{budget}}}
   Interests: {{{interests}}}
 
-  Summarize available travel options (flights, trains, buses) to {{{destination}}} for the given dates and budget. Include relevant links and details.
+  Summarize available travel options (flights, trains, buses) to {{{destination}}} for the given dates and budget. Include relevant links and specific carrier names (e.g., specific airlines or train companies).
   Refine travel options search with: {{{travelOptionsPrompt}}}
   `,
 });
@@ -61,14 +61,14 @@ const accommodationOptionsPrompt = ai.definePrompt({
   name: 'accommodationOptionsPrompt',
   input: {schema: ScrapeAndSummarizeTravelOptionsInputSchema},
   output: {schema: SummaryOutputSchema},
-  prompt: `You are an expert travel assistant. Your task is to find and summarize accommodation options based on the user's preferences.
+  prompt: `You are an expert travel assistant. Your task is to find and summarize accommodation options based on the user's preferences. Use specific, real-world hotel names. Do not use generic phrases like "a luxury hotel".
 
   Destination: {{{destination}}}
   Dates: {{{dates}}}
   Budget: {{{budget}}}
   Interests: {{{interests}}}
 
-  Summarize available accommodation options (hotels, hostels, rentals) in {{{destination}}} for the given dates and budget. Include relevant links and details.
+  Summarize available accommodation options (hotels, hostels, rentals) in {{{destination}}} for the given dates and budget. Recommend 2-3 specific, real-world hotels with names. Include relevant links and details.
   Refine accommodation options search with: {{{accommodationOptionsPrompt}}}
   `,
 });
@@ -77,12 +77,12 @@ const attractionOptionsPrompt = ai.definePrompt({
   name: 'attractionOptionsPrompt',
   input: {schema: ScrapeAndSummarizeTravelOptionsInputSchema},
   output: {schema: SummaryOutputSchema},
-  prompt: `You are an expert travel assistant. Your task is to find and summarize tourist attractions and points of interest based on the user's preferences.
+  prompt: `You are an expert travel assistant. Your task is to find and summarize tourist attractions, points of interest and restaurants based on the user's preferences. Use specific, real-world names.
 
   Destination: {{{destination}}}
   Interests: {{{interests}}}
 
-  Identify and summarize tourist attractions and points of interest in {{{destination}}} based on the user's interests. Include relevant links and details.
+  Identify and summarize tourist attractions, points of interest, and restaurants in {{{destination}}} based on the user's interests. Recommend specific, real-world places with names. Do not use generic phrases like "a local restaurant". Include relevant links and details.
   Refine attraction options search with: {{{attractionOptionsPrompt}}}
   `,
 });
