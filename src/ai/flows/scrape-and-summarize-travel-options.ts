@@ -37,9 +37,14 @@ export async function scrapeAndSummarizeTravelOptions(
   return scrapeAndSummarizeTravelOptionsFlow(input);
 }
 
+const SummaryOutputSchema = z.object({
+  summary: z.string(),
+});
+
 const travelOptionsPrompt = ai.definePrompt({
   name: 'travelOptionsPrompt',
   input: {schema: ScrapeAndSummarizeTravelOptionsInputSchema},
+  output: {schema: SummaryOutputSchema},
   prompt: `You are an expert travel assistant. Your task is to find and summarize travel options based on the user's preferences.
 
   Destination: {{{destination}}}
@@ -55,6 +60,7 @@ const travelOptionsPrompt = ai.definePrompt({
 const accommodationOptionsPrompt = ai.definePrompt({
   name: 'accommodationOptionsPrompt',
   input: {schema: ScrapeAndSummarizeTravelOptionsInputSchema},
+  output: {schema: SummaryOutputSchema},
   prompt: `You are an expert travel assistant. Your task is to find and summarize accommodation options based on the user's preferences.
 
   Destination: {{{destination}}}
@@ -70,6 +76,7 @@ const accommodationOptionsPrompt = ai.definePrompt({
 const attractionOptionsPrompt = ai.definePrompt({
   name: 'attractionOptionsPrompt',
   input: {schema: ScrapeAndSummarizeTravelOptionsInputSchema},
+  output: {schema: SummaryOutputSchema},
   prompt: `You are an expert travel assistant. Your task is to find and summarize tourist attractions and points of interest based on the user's preferences.
 
   Destination: {{{destination}}}
@@ -94,9 +101,9 @@ const scrapeAndSummarizeTravelOptionsFlow = ai.defineFlow(
     ]);
 
     return {
-      travelOptionsSummary: travelOptions.output!,
-      accommodationOptionsSummary: accommodationOptions.output!,
-      attractionOptionsSummary: attractionOptions.output!,
+      travelOptionsSummary: travelOptions.output?.summary || "",
+      accommodationOptionsSummary: accommodationOptions.output?.summary || "",
+      attractionOptionsSummary: attractionOptions.output?.summary || "",
     };
   }
 );
