@@ -32,7 +32,7 @@ export async function generateItineraryAction(
       destination,
       dates: `From ${startDate} to ${endDate}`,
       budget: `${budget} USD`,
-      interests,
+      interests: interests.join(", "),
     };
 
     const scrapedData = await scrapeAndSummarizeTravelOptions(scrapeInput);
@@ -42,8 +42,8 @@ export async function generateItineraryAction(
       - Destination: ${destination}
       - Dates: From ${startDate} to ${endDate}
       - Budget: Approximately ${budget} USD
-      - Interests: ${interests}
-      - Travel Style: ${travelStyle}
+      - Interests: ${interests.join(", ")}
+      - Travel Style: ${travelStyle.join(", ")}
     `;
 
     const timelineInput: GenerateItineraryTimelineInput = {

@@ -15,10 +15,10 @@ export const FormSchema = z.object({
   budget: z.coerce.number().min(0, {
     message: "Budget must be a positive number.",
   }),
-  interests: z.string().min(3, {
-    message: "Please list at least one interest.",
+  interests: z.array(z.string()).refine((value) => value.some((item) => item), {
+    message: "You have to select at least one interest.",
   }),
-  travelStyle: z.string().min(3, {
-    message: "Please describe your travel style.",
+  travelStyle: z.array(z.string()).refine((value) => value.some((item) => item), {
+    message: "You have to select at least one travel style.",
   }),
 });

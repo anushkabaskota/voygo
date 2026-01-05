@@ -19,7 +19,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Popover,
   PopoverContent,
@@ -33,6 +33,27 @@ interface ItineraryFormProps {
   isPending: boolean;
 }
 
+const interests = [
+  { id: "history", label: "History" },
+  { id: "food", label: "Food" },
+  { id: "hiking", label: "Hiking" },
+  { id: "museums", label: "Museums" },
+  { id: "nightlife", label: "Nightlife" },
+  { id: "art", label: "Art" },
+  { id: "shopping", label: "Shopping" },
+  { id: "nature", label: "Nature" },
+];
+
+const travelStyles = [
+  { id: "adventurous", label: "Adventurous" },
+  { id: "relaxing", label: "Relaxing" },
+  { id: "luxury", label: "Luxury" },
+  { id: "budget-friendly", label: "Budget-Friendly" },
+  { id: "family-friendly", label: "Family-Friendly" },
+  { id: "fast-paced", label: "Fast-Paced" },
+];
+
+
 export default function ItineraryForm({
   onSubmit,
   isPending,
@@ -43,8 +64,8 @@ export default function ItineraryForm({
       destination: "",
       dates: { from: undefined, to: undefined },
       budget: 1000,
-      interests: "",
-      travelStyle: "",
+      interests: [],
+      travelStyle: [],
     },
   });
 
@@ -155,18 +176,49 @@ export default function ItineraryForm({
             <FormField
               control={form.control}
               name="interests"
-              render={({ field }) => (
+              render={() => (
                 <FormItem>
-                  <FormLabel>Interests</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="e.g., history, food, hiking, museums, nightlife"
-                      {...field}
+                  <div className="mb-4">
+                    <FormLabel>Interests</FormLabel>
+                    <FormDescription>
+                      Select the activities you are interested in.
+                    </FormDescription>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {interests.map((item) => (
+                    <FormField
+                      key={item.id}
+                      control={form.control}
+                      name="interests"
+                      render={({ field }) => {
+                        return (
+                          <FormItem
+                            key={item.id}
+                            className="flex flex-row items-start space-x-3 space-y-0"
+                          >
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value?.includes(item.id)}
+                                onCheckedChange={(checked) => {
+                                  return checked
+                                    ? field.onChange([...field.value, item.id])
+                                    : field.onChange(
+                                        field.value?.filter(
+                                          (value) => value !== item.id
+                                        )
+                                      );
+                                }}
+                              />
+                            </FormControl>
+                            <FormLabel className="font-normal">
+                              {item.label}
+                            </FormLabel>
+                          </FormItem>
+                        );
+                      }}
                     />
-                  </FormControl>
-                  <FormDescription>
-                    List some things you enjoy, separated by commas.
-                  </FormDescription>
+                  ))}
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
@@ -175,18 +227,49 @@ export default function ItineraryForm({
             <FormField
               control={form.control}
               name="travelStyle"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Travel Style</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="e.g., fast-paced and adventurous, slow and relaxing, luxury-focused"
-                      {...field}
+              render={() => (
+                 <FormItem>
+                  <div className="mb-4">
+                    <FormLabel>Travel Style</FormLabel>
+                    <FormDescription>
+                      How do you like to travel?
+                    </FormDescription>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {travelStyles.map((item) => (
+                    <FormField
+                      key={item.id}
+                      control={form.control}
+                      name="travelStyle"
+                      render={({ field }) => {
+                        return (
+                          <FormItem
+                            key={item.id}
+                            className="flex flex-row items-start space-x-3 space-y-0"
+                          >
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value?.includes(item.id)}
+                                onCheckedChange={(checked) => {
+                                  return checked
+                                    ? field.onChange([...field.value, item.id])
+                                    : field.onChange(
+                                        field.value?.filter(
+                                          (value) => value !== item.id
+                                        )
+                                      );
+                                }}
+                              />
+                            </FormControl>
+                            <FormLabel className="font-normal">
+                              {item.label}
+                            </FormLabel>
+                          </FormItem>
+                        );
+                      }}
                     />
-                  </FormControl>
-                  <FormDescription>
-                    Describe your ideal vacation pace and style.
-                  </FormDescription>
+                  ))}
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
