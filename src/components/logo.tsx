@@ -10,7 +10,7 @@ const Logo = ({ className }: { className?: string }) => {
       )}
     >
       <Compass className="h-7 w-7 text-primary" />
-      <span>WanderWise</span>
+      <span>voygo</span>
     </div>
   );
 };

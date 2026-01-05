@@ -4,7 +4,7 @@ import './globals.css';
 import Script from 'next/script';
 
 export const metadata: Metadata = {
-  title: 'WanderWise',
+  title: 'voygo',
   description: 'Your AI-powered travel itinerary planner.',
 };
 
