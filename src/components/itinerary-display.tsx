@@ -9,7 +9,14 @@ import {
   Calendar,
   Sparkles,
   ArrowLeft,
+  ChevronDown,
 } from "lucide-react";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import {
   Card,
   CardContent,
@@ -18,7 +25,6 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import type { GenerateItineraryTimelineOutput } from "@/ai/flows/generate-itinerary-timeline";
 
 interface ItineraryDisplayProps {
@@ -44,40 +50,41 @@ const iconMap = {
 };
 
 const parseTimeline = (timeline: string): DayEntry[] => {
+  if (!timeline) return [];
+
   const entries: DayEntry[] = [];
-  let currentDay: DayEntry | null = null;
+  const dayBlocks = timeline.split(/(?=^Day \d+.*$)/im);
 
-  timeline.split("\n").forEach((line) => {
-    const trimmedLine = line.trim();
-    if (!trimmedLine) return;
+  dayBlocks.forEach((block) => {
+    const lines = block.trim().split('\n');
+    if (lines.length === 0 || !lines[0].trim().startsWith("Day")) return;
 
-    const dayMatch = trimmedLine.match(/^Day\s*\d+.*$/i);
-    if (dayMatch) {
-      if (currentDay) {
-        entries.push(currentDay);
-      }
-      currentDay = { title: dayMatch[0], items: [] };
-    } else if (currentDay) {
-      const content = trimmedLine.replace(/^- /, "");
-      let type: TimelineItem["type"] = "activity";
+    const title = lines.shift()!.trim();
+    const items: TimelineItem[] = [];
 
-      if (content.toLowerCase().startsWith("travel:")) {
+    lines.forEach(line => {
+      const trimmedLine = line.trim().replace(/^- /, "");
+      if (!trimmedLine) return;
+      
+      let type: TimelineItem['type'] = "activity";
+
+      if (trimmedLine.toLowerCase().includes("arrive") || trimmedLine.toLowerCase().includes("flight") || trimmedLine.toLowerCase().includes("train")) {
         type = "travel";
-      } else if (content.toLowerCase().startsWith("accommodation:")) {
+      } else if (trimmedLine.toLowerCase().includes("check in") || trimmedLine.toLowerCase().includes("accommodation")) {
         type = "accommodation";
       }
 
-      currentDay.items.push({
-        text: content,
+      items.push({
+        text: trimmedLine,
         type: type,
         icon: iconMap[type],
       });
+    });
+
+    if (title || items.length > 0) {
+      entries.push({ title: title || `Day ${entries.length + 1}`, items });
     }
   });
-
-  if (currentDay) {
-    entries.push(currentDay);
-  }
 
   return entries;
 };
@@ -111,32 +118,37 @@ export default function ItineraryDisplay({
                 <span className="font-headline text-2xl">Daily Timeline</span>
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              {parsedTimeline.map((day, dayIndex) => (
-                <div key={dayIndex}>
-                  <h3 className="font-bold text-xl mb-4 font-headline text-primary">
-                    {day.title}
-                  </h3>
-                  <div className="pl-4 border-l-2 border-primary/20 space-y-4">
-                    {day.items.map((item, itemIndex) => {
-                      const Icon = item.icon;
-                      return (
-                        <div key={itemIndex} className="flex items-start gap-4 relative">
-                          <div className="absolute -left-[25px] top-1 z-10 bg-background p-1 rounded-full">
-                            <Icon className="h-5 w-5 text-accent" />
-                          </div>
-                          <p className="pt-0.5">{item.text}</p>
+            <CardContent>
+              {parsedTimeline.length > 0 ? (
+                 <Accordion type="single" collapsible defaultValue="day-0" className="w-full">
+                  {parsedTimeline.map((day, dayIndex) => (
+                    <AccordionItem value={`day-${dayIndex}`} key={dayIndex}>
+                      <AccordionTrigger className="text-xl font-headline text-primary hover:no-underline">
+                        {day.title}
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <div className="pl-4 border-l-2 border-primary/20 space-y-6 pt-4">
+                          {day.items.map((item, itemIndex) => {
+                            const Icon = item.icon;
+                            return (
+                              <div key={itemIndex} className="flex items-start gap-4 relative">
+                                <div className="absolute -left-[27px] top-1 z-10 bg-background p-1.5 rounded-full border">
+                                  <Icon className="h-4 w-4 text-accent" />
+                                </div>
+                                <p className="pt-0.5 text-foreground/90">{item.text}</p>
+                              </div>
+                            );
+                          })}
                         </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-              {parsedTimeline.length === 0 && (
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                 </Accordion>
+              ) : (
                 <p className="text-muted-foreground">
                   The AI couldn't generate a detailed daily timeline. Here's the raw output:
                   <br /><br />
-                  <span className="whitespace-pre-wrap">{itinerary.timeline}</span>
+                  <span className="whitespace-pre-wrap bg-muted/50 p-4 rounded-md block">{itinerary.timeline}</span>
                 </p>
               )}
             </CardContent>
