@@ -27,6 +27,20 @@ export default function PlacesAutocompleteComponent({
     }
   };
 
+  const isGoogleMapsApiAvailable =
+    typeof window !== "undefined" && window.google?.maps?.places;
+
+  if (!isGoogleMapsApiAvailable) {
+    console.warn("Google Maps API not loaded. Falling back to simple input.");
+    return (
+      <Input
+        placeholder="e.g., Paris, France"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    );
+  }
+
   return (
     <PlacesAutocomplete
       value={value}
@@ -51,6 +65,7 @@ export default function PlacesAutocompleteComponent({
                   {...getSuggestionItemProps(suggestion, {
                     className,
                   })}
+                  key={suggestion.placeId}
                 >
                   <span>{suggestion.description}</span>
                 </div>
