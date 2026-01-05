@@ -22,6 +22,7 @@ export type GenerateItineraryTimelineInput = z.infer<typeof GenerateItineraryTim
 const ActivitySchema = z.object({
   text: z.string().describe('A description of the activity.'),
   type: z.enum(['travel', 'accommodation', 'activity']).describe('The type of activity.'),
+  budget: z.number().optional().describe('Estimated cost for this activity in USD.'),
 });
 
 const DayEntrySchema = z.object({
@@ -52,6 +53,8 @@ Use the specific names of hotels, restaurants, and attractions provided. Do not 
 
 Create a timeline that incorporates travel, accommodation, and attractions in a sensible order, creating a comprehensive itinerary. Each day should be a list of activities.
 For each activity, determine its type: 'travel' (for flights, trains, etc.), 'accommodation' (for hotel check-ins), or 'activity' (for sightseeing, meals, etc.).
+
+For each activity, provide an estimated cost in USD in the 'budget' field. If an activity is free, set the budget to 0.
 
 Create a description of a route map that shows how to get to each thing in the timeline, and incorporate methods of transit.
 

@@ -9,7 +9,7 @@ import {
   Calendar,
   Sparkles,
   ArrowLeft,
-  ChevronDown,
+  DollarSign,
 } from "lucide-react";
 import {
   Accordion,
@@ -44,13 +44,13 @@ export default function ItineraryDisplay({
 }: ItineraryDisplayProps) {
   const parsedTimeline = useMemo(() => {
     if (!itinerary.timeline) return [];
-    return itinerary.timeline.map(day => ({
+    return itinerary.timeline.map((day) => ({
       ...day,
-      items: day.items.map(item => ({
+      items: day.items.map((item) => ({
         ...item,
-        icon: iconMap[item.type] || MapPin
-      }))
-    }))
+        icon: iconMap[item.type] || MapPin,
+      })),
+    }));
   }, [itinerary.timeline]);
 
   return (
@@ -75,22 +75,42 @@ export default function ItineraryDisplay({
             </CardHeader>
             <CardContent>
               {parsedTimeline && parsedTimeline.length > 0 ? (
-                 <Accordion type="single" collapsible defaultValue="day-0" className="w-full">
+                <Accordion
+                  type="single"
+                  collapsible
+                  defaultValue="day-0"
+                  className="w-full"
+                >
                   {parsedTimeline.map((day, dayIndex) => (
                     <AccordionItem value={`day-${dayIndex}`} key={dayIndex}>
                       <AccordionTrigger className="text-xl font-headline text-primary hover:no-underline">
                         {day.title}
                       </AccordionTrigger>
                       <AccordionContent>
-                        <div className="pl-4 border-l-2 border-primary/20 space-y-6 pt-4">
+                        <div className="pl-5 border-l-2 border-primary/20 space-y-6 pt-4">
                           {day.items.map((item, itemIndex) => {
                             const Icon = item.icon;
                             return (
-                              <div key={itemIndex} className="flex items-start gap-4 relative">
-                                <div className="absolute -left-[27px] top-1 z-10 bg-background p-1.5 rounded-full border">
-                                  <Icon className="h-4 w-4 text-accent" />
+                              <div
+                                key={itemIndex}
+                                className="flex items-start gap-4 relative"
+                              >
+                                <div className="absolute -left-[11px] top-1 z-10 bg-background p-1 rounded-full border">
+                                  <Icon className="h-3 w-3 text-accent" />
                                 </div>
-                                <p className="pt-0.5 text-foreground/90">{item.text}</p>
+                                <div className="ml-6 flex-1">
+                                  <p className="text-foreground/90">{item.text}</p>
+                                  {item.budget !== undefined && (
+                                    <div className="flex items-center text-xs text-muted-foreground mt-1">
+                                      <DollarSign className="h-3 w-3 mr-1" />
+                                      <span>
+                                        {item.budget > 0
+                                          ? `Est. $${item.budget}`
+                                          : "Free"}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             );
                           })}
@@ -98,7 +118,7 @@ export default function ItineraryDisplay({
                       </AccordionContent>
                     </AccordionItem>
                   ))}
-                 </Accordion>
+                </Accordion>
               ) : (
                 <p className="text-muted-foreground">
                   The AI couldn't generate a detailed daily timeline.
