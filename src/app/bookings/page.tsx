@@ -8,7 +8,6 @@ import type { GenerateItineraryTimelineOutput } from '@/ai/flows/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Logo from '@/components/logo';
-import { Separator } from '@/components/ui/separator';
 
 function extractLinks(text: string): { url: string; text: string }[] {
   if (!text) return [];
@@ -30,12 +29,7 @@ export default function BookingsPage() {
     if (storedData) {
       try {
         const parsedData = JSON.parse(storedData);
-        // The stored data has a 'timeline' property which contains the itinerary
-        if (parsedData && parsedData.timeline) {
-          setItinerary(parsedData.timeline);
-        } else {
-          setItinerary(parsedData);
-        }
+        setItinerary(parsedData);
       } catch (e) {
         console.error("Failed to parse itinerary data from session storage", e);
       }
