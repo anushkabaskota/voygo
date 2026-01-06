@@ -1,25 +1,7 @@
-# Firebase Studio
+# Voygo : AI Powered Travel Companion
 
-This is a NextJS starter in Firebase Studio.
+Voygo is an AI-powered travel companion designed to assist users in planning personalized travel itineraries. The system generates detailed, day-wise travel plans based on user inputs such as destination, trip duration, budget, and interests.
 
-To get started, take a look at src/app/page.tsx.
+The application follows a hybrid methodology that combines structured planning logic with generative AI models. Cloud-based services on Google Cloud Platform (GCP) are used to manage backend infrastructure, authentication, and data storage, while Google APIs are leveraged to support AI-driven generation and contextual travel information. The architecture is modular and cloud-native, enabling scalable deployment and clear separation between the user interface, itinerary generation logic, and supporting services.
 
-## Google Places API 🔎
-
-The destination input can use the Google Places API for autocomplete suggestions. To enable the server proxy endpoints added for Places, set the following environment variable in your environment (e.g., `.env.local`):
-
-```
-GOOGLE_PLACES_API_KEY=your_api_key_here
-```
-
-Restart the dev server after adding the variable.
-
-## Gemini API 🤖
-
-If you plan to use Google Gemini (or another LLM accessed via a service key), add your API key to `.env.local`:
-
-```
-GEMINI_API_KEY=your_gemini_api_key_here
-```
-
-Keep this key secret and do not commit it to source control.
+Voygo also provides itinerary-aware booking redirection by generating dynamic links to trusted third-party travel platforms, allowing users to move seamlessly from planning to booking without handling transactions directly. The project is developed as an academic prototype, with an emphasis on clarity, extensibility, and real-world applicability.
