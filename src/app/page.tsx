@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useTransition } from "react";
@@ -22,6 +23,8 @@ export default function Home() {
   const [appState, setAppState] = useState<AppState>("form");
   const [itinerary, setItinerary] =
     useState<GenerateItineraryTimelineOutput | null>(null);
+  const [lastFormData, setLastFormData] =
+    useState<z.infer<typeof FormSchema> | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
@@ -29,6 +32,7 @@ export default function Home() {
   const heroImage = PlaceHolderImages.find((img) => img.id === "hero");
 
   const handleFormSubmit = (data: z.infer<typeof FormSchema>) => {
+    setLastFormData(data);
     setAppState("loading");
     startTransition(async () => {
       const result = await generateItineraryAction(data);
@@ -49,8 +53,19 @@ export default function Home() {
     });
   };
 
-  const resetForm = () => {
+  const handleRegenerate = () => {
+    if (lastFormData) {
+      handleFormSubmit(lastFormData);
+    }
+  };
+
+  const handleModify = () => {
+    setAppState("form");
+  };
+
+  const resetApp = () => {
     setItinerary(null);
+    setLastFormData(null);
     setErrorMessage("");
     setAppState("form");
   };
@@ -110,6 +125,7 @@ export default function Home() {
                 <ItineraryForm
                   onSubmit={handleFormSubmit}
                   isPending={isPending}
+                  initialValues={lastFormData}
                 />
               </section>
             </motion.div>
@@ -141,7 +157,9 @@ export default function Home() {
             >
               <ItineraryDisplay
                 itinerary={itinerary}
-                onReset={resetForm}
+                onRegenerate={handleRegenerate}
+                onModify={handleModify}
+                isPending={isPending}
               />
             </motion.div>
           )}
@@ -161,7 +179,7 @@ export default function Home() {
                   Something Went Wrong
                 </h2>
                 <p className="mb-6">{errorMessage}</p>
-                <Button onClick={resetForm} variant="destructive">
+                <Button onClick={resetApp} variant="destructive">
                   Try Again
                 </Button>
               </div>

@@ -1,5 +1,7 @@
+
 "use client";
 
+import { useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
@@ -32,6 +34,7 @@ import PlacesAutocomplete from "./places-autocomplete";
 interface ItineraryFormProps {
   onSubmit: (data: z.infer<typeof FormSchema>) => void;
   isPending: boolean;
+  initialValues?: z.infer<typeof FormSchema> | null;
 }
 
 const interests = [
@@ -58,10 +61,11 @@ const travelStyles = [
 export default function ItineraryForm({
   onSubmit,
   isPending,
+  initialValues,
 }: ItineraryFormProps) {
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
-    defaultValues: {
+    defaultValues: initialValues || {
       destination: "",
       dates: { from: undefined, to: undefined },
       budget: 1000,
@@ -69,6 +73,13 @@ export default function ItineraryForm({
       travelStyle: [],
     },
   });
+
+  useEffect(() => {
+    if (initialValues) {
+      form.reset(initialValues);
+    }
+  }, [initialValues, form]);
+
 
   return (
     <Card className="w-full max-w-4xl mx-auto shadow-lg border-border/60">

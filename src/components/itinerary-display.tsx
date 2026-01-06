@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useMemo } from "react";
@@ -8,8 +9,10 @@ import {
   Map,
   Calendar,
   Sparkles,
-  ArrowLeft,
+  RefreshCw,
+  Edit,
   DollarSign,
+  Loader2,
 } from "lucide-react";
 import {
   Accordion,
@@ -29,7 +32,9 @@ import type { GenerateItineraryTimelineOutput } from "@/ai/flows/generate-itiner
 
 interface ItineraryDisplayProps {
   itinerary: GenerateItineraryTimelineOutput;
-  onReset: () => void;
+  onRegenerate: () => void;
+  onModify: () => void;
+  isPending: boolean;
 }
 
 const iconMap = {
@@ -40,7 +45,9 @@ const iconMap = {
 
 export default function ItineraryDisplay({
   itinerary,
-  onReset,
+  onRegenerate,
+  onModify,
+  isPending,
 }: ItineraryDisplayProps) {
   const parsedTimeline = useMemo(() => {
     if (!itinerary.timeline) return [];
@@ -159,12 +166,33 @@ export default function ItineraryDisplay({
         </div>
       </div>
 
-      <div className="text-center mt-12">
-        <Button onClick={onReset} size="lg" variant="outline">
-          <ArrowLeft className="mr-2 h-5 w-5" />
-          Plan Another Trip
+      <div className="text-center mt-12 flex flex-col sm:flex-row items-center justify-center gap-4">
+        <Button
+          onClick={onRegenerate}
+          size="lg"
+          variant="outline"
+          disabled={isPending}
+          className="w-full sm:w-auto"
+        >
+          {isPending ? (
+            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+          ) : (
+            <RefreshCw className="mr-2 h-5 w-5" />
+          )}
+          Regenerate
+        </Button>
+        <Button
+          onClick={onModify}
+          size="lg"
+          variant="default"
+          disabled={isPending}
+          className="w-full sm:w-auto"
+        >
+          <Edit className="mr-2 h-5 w-5" />
+          Modify Plan
         </Button>
       </div>
     </div>
   );
 }
+
