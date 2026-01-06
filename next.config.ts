@@ -30,6 +30,12 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  experimental: {
+    // This is to allow cross-origin requests in development.
+    allowedDevOrigins: [
+      'https://6000-firebase-studio-1767630475974.cluster-c36dgv2kibakqwbbbsgmia3fny.cloudworkstations.dev',
+    ],
+  },
   env: {
     NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
   }
