@@ -1,3 +1,4 @@
+
 "use server";
 
 import { z } from "zod";
@@ -5,16 +6,23 @@ import { format } from "date-fns";
 import {
   scrapeAndSummarizeTravelOptions,
   type ScrapeAndSummarizeTravelOptionsInput,
+  type ScrapeAndSummarizeTravelOptionsOutput,
 } from "@/ai/flows/scrape-and-summarize-travel-options";
 import {
   generateItineraryTimeline,
-  type GenerateItineraryTimelineInput,
 } from "@/ai/flows/generate-itinerary-timeline";
+import { type GenerateItineraryTimelineInput, type GenerateItineraryTimelineOutput } from "@/ai/flows/types";
 import { FormSchema } from "@/lib/types";
+
+// We need to return the scraped data along with the timeline
+type ItineraryActionResult = {
+  timeline: GenerateItineraryTimelineOutput;
+  scrapedData: ScrapeAndSummarizeTravelOptionsOutput;
+};
 
 export async function generateItineraryAction(
   values: z.infer<typeof FormSchema>
-) {
+): Promise<{ success: boolean; data?: ItineraryActionResult; error?: string }> {
   const validatedFields = FormSchema.safeParse(values);
 
   if (!validatedFields.success) {
@@ -53,9 +61,19 @@ export async function generateItineraryAction(
       preferences,
     };
 
-    const itinerary = await generateItineraryTimeline(timelineInput);
+    const timeline = await generateItineraryTimeline(timelineInput);
 
-    return { success: true, data: itinerary };
+    return {
+      success: true,
+      data: {
+        timeline: timeline,
+        scrapedData: {
+            travelOptionsSummary: scrapedData.travelOptionsSummary,
+            accommodationOptionsSummary: scrapedData.accommodationOptionsSummary,
+            attractionOptionsSummary: scrapedData.attractionOptionsSummary
+        }
+      },
+    };
   } catch (error) {
     console.error("Error generating itinerary:", error);
     return {

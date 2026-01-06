@@ -2,6 +2,7 @@
 "use client";
 
 import { useMemo } from "react";
+import Link from "next/link";
 import {
   Plane,
   Hotel,
@@ -13,6 +14,7 @@ import {
   Edit,
   DollarSign,
   Loader2,
+  ChevronRight,
 } from "lucide-react";
 import {
   Accordion,
@@ -28,7 +30,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import type { GenerateItineraryTimelineOutput } from "@/ai/flows/generate-itinerary-timeline";
+import type { GenerateItineraryTimelineOutput } from "@/ai/flows/types";
 
 interface ItineraryDisplayProps {
   itinerary: GenerateItineraryTimelineOutput;
@@ -184,15 +186,20 @@ export default function ItineraryDisplay({
         <Button
           onClick={onModify}
           size="lg"
-          variant="default"
+          variant="outline"
           disabled={isPending}
           className="w-full sm:w-auto"
         >
           <Edit className="mr-2 h-5 w-5" />
           Modify Plan
         </Button>
+        <Button asChild size="lg" className="w-full sm:w-auto">
+          <Link href="/bookings">
+            Proceed to Bookings
+            <ChevronRight className="ml-2 h-5 w-5" />
+          </Link>
+        </Button>
       </div>
     </div>
   );
 }
-

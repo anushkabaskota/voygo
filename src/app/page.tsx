@@ -15,7 +15,7 @@ import LoadingDisplay from "@/components/loading-display";
 import Logo from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
-import type { GenerateItineraryTimelineOutput } from "@/ai/flows/generate-itinerary-timeline";
+import type { GenerateItineraryTimelineOutput } from "@/ai/flows/types";
 
 type AppState = "form" | "loading" | "results" | "error";
 
@@ -36,8 +36,10 @@ export default function Home() {
     setAppState("loading");
     startTransition(async () => {
       const result = await generateItineraryAction(data);
-      if (result.success) {
-        setItinerary(result.data);
+      if (result.success && result.data) {
+        setItinerary(result.data.timeline);
+        // Save to session storage for booking page
+        sessionStorage.setItem('itineraryData', JSON.stringify(result.data.timeline));
         setAppState("results");
       } else {
         const error =
@@ -67,6 +69,7 @@ export default function Home() {
     setItinerary(null);
     setLastFormData(null);
     setErrorMessage("");
+    sessionStorage.removeItem('itineraryData');
     setAppState("form");
   };
 

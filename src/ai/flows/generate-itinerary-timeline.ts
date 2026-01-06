@@ -1,50 +1,29 @@
+
 'use server';
 /**
  * @fileOverview An AI agent that arranges travel options, accommodation, and points of interest into an interactive timeline based on user preferences.
  *
  * - generateItineraryTimeline - A function that handles the generation of the itinerary timeline.
- * - GenerateItineraryTimelineInput - The input type for the generateItineraryTimeline function.
- * - GenerateItineraryTimelineOutput - The return type for the generateItineraryTimeline function.
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { GenerateItineraryTimelineInputSchema, ItineraryTimelineAISchema, GenerateItineraryTimelineOutputSchema, type GenerateItineraryTimelineInput, type GenerateItineraryTimelineOutput } from './types';
 
-const GenerateItineraryTimelineInputSchema = z.object({
-  travelOptions: z.string().describe('Travel options including flights and trains, each with links and details.'),
-  accommodationOptions: z.string().describe('Accommodation options including hotels and rentals, each with links and details.'),
-  touristAttractions: z.string().describe('Tourist attractions and points of interest, each with key details and links.'),
-  preferences: z.string().describe('User preferences for the itinerary, including dates, budget, and interests.'),
-});
-
-export type GenerateItineraryTimelineInput = z.infer<typeof GenerateItineraryTimelineInputSchema>;
-
-const ActivitySchema = z.object({
-  text: z.string().describe('A description of the activity.'),
-  type: z.enum(['travel', 'accommodation', 'activity']).describe('The type of activity.'),
-  budget: z.number().optional().describe('Estimated cost for this activity in USD.'),
-});
-
-const DayEntrySchema = z.object({
-  title: z.string().describe('The title for the day, e.g., "Day 1: Arrival in Paris".'),
-  items: z.array(ActivitySchema).describe('A list of activities for the day.'),
-});
-
-const GenerateItineraryTimelineOutputSchema = z.object({
-  timeline: z.array(DayEntrySchema).describe('A structured timeline of the itinerary, with each element representing a day.'),
-  routeMap: z.string().describe('A description of the route map for the itinerary.'),
-});
-
-export type GenerateItineraryTimelineOutput = z.infer<typeof GenerateItineraryTimelineOutputSchema>;
 
 export async function generateItineraryTimeline(input: GenerateItineraryTimelineInput): Promise<GenerateItineraryTimelineOutput> {
-  return generateItineraryTimelineFlow(input);
+  const result = await generateItineraryTimelineFlow(input);
+  return {
+    ...result,
+    travelOptions: input.travelOptions,
+    accommodationOptions: input.accommodationOptions,
+    touristAttractions: input.touristAttractions,
+  };
 }
 
 const generateItineraryTimelinePrompt = ai.definePrompt({
   name: 'generateItineraryTimelinePrompt',
   input: {schema: GenerateItineraryTimelineInputSchema},
-  output: {schema: GenerateItineraryTimelineOutputSchema},
+  output: {schema: ItineraryTimelineAISchema},
   prompt: `You are a professional travel planner creating a detailed, realistic travel itinerary.
 
 Based on the following user preferences: {{{preferences}}}, arrange the following travel options: {{{travelOptions}}}, accommodation options: {{{accommodationOptions}}}, and tourist attractions: {{{touristAttractions}}} into a daily timeline and route map.
@@ -66,7 +45,7 @@ const generateItineraryTimelineFlow = ai.defineFlow(
   {
     name: 'generateItineraryTimelineFlow',
     inputSchema: GenerateItineraryTimelineInputSchema,
-    outputSchema: GenerateItineraryTimelineOutputSchema,
+    outputSchema: ItineraryTimelineAISchema,
   },
   async input => {
     const {output} = await generateItineraryTimelinePrompt(input);
