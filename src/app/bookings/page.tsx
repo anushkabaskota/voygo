@@ -3,39 +3,181 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Plane, Hotel, MapPin, ExternalLink, ArrowLeft } from 'lucide-react';
+import { Plane, Hotel, MapPin, ExternalLink, ArrowLeft, Building, MountainSnow, Utensils } from 'lucide-react';
+import { format, differenceInDays } from 'date-fns';
 import type { GenerateItineraryTimelineOutput } from '@/ai/flows/types';
+import type { FormSchema } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Logo from '@/components/logo';
 
-function extractLinks(text: string): { url: string; text: string }[] {
-  if (!text) return [];
-  const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
-  const links = [];
-  let match;
-  while ((match = linkRegex.exec(text)) !== null) {
-    links.push({ text: match[1], url: match[2] });
-  }
-  return links;
+type ItineraryData = {
+  timeline: GenerateItineraryTimelineOutput;
+  formData: z.infer<typeof FormSchema>;
+};
+
+interface BookingLink {
+  name: string;
+  url: string;
+  icon: React.ReactNode;
 }
 
+// --- URL Generation Functions ---
+
+function getTravelLinks(formData: z.infer<typeof FormSchema>): BookingLink[] {
+  if (!formData?.destination || !formData.dates.from || !formData.dates.to) return [];
+  
+  const origin = "your location"; // Generic origin
+  const destination = formData.destination;
+  const departureDate = format(formData.dates.from, 'yyyy-MM-dd');
+  const returnDate = format(formData.dates.to, 'yyyy-MM-dd');
+
+  return [
+    {
+      name: 'Google Flights',
+      url: `https://www.google.com/flights?q=Flights+to+${encodeURIComponent(destination)}+from+${encodeURIComponent(origin)}+on+${departureDate}+to+${returnDate}`,
+      icon: <Plane className="h-8 w-8" />,
+    },
+    {
+      name: 'Skyscanner',
+      url: `https://www.skyscanner.com/transport/flights/from-any/${encodeURIComponent(destination.toLowerCase().replace(/\s/g, '-'))}/${departureDate}/${returnDate}/`,
+      icon: <Plane className="h-8 w-8" />,
+    },
+  ];
+}
+
+function getAccommodationLinks(formData: z.infer<typeof FormSchema>, itinerary: GenerateItineraryTimelineOutput): BookingLink[] {
+  if (!formData?.destination || !formData.dates.from || !formData.dates.to) return [];
+
+  const destination = formData.destination;
+  const checkinDate = format(formData.dates.from, 'yyyy-MM-dd');
+  const checkoutDate = format(formData.dates.to, 'yyyy-MM-dd');
+  const nights = differenceInDays(formData.dates.to, formData.dates.from);
+
+  // Try to find a specific neighborhood from the itinerary
+  const accommodationInfo = itinerary.timeline?.flatMap(day => day.items).find(item => item.type === 'accommodation')?.text;
+  let query = destination;
+  if (accommodationInfo) {
+      // A simple heuristic to find a hotel name or area
+      const hotelMatch = accommodationInfo.match(/(?:at|in|near|stay at)\s(.*?)(?:,|$|\.)/i);
+      if (hotelMatch && hotelMatch[1]) {
+        query = hotelMatch[1].trim() + ", " + destination;
+      }
+  }
+
+  return [
+    {
+      name: 'Booking.com',
+      url: `https://www.booking.com/searchresults.html?ss=${encodeURIComponent(query)}&checkin=${checkinDate}&checkout=${checkoutDate}&group_adults=2`,
+      icon: <Building className="h-8 w-8" />,
+    },
+    {
+      name: 'Airbnb',
+      url: `https://www.airbnb.com/s/${encodeURIComponent(query)}/homes?checkin=${checkinDate}&checkout=${checkoutDate}&adults=2`,
+      icon: <Hotel className="h-8 w-8" />,
+    },
+  ];
+}
+
+function getAttractionLinks(formData: z.infer<typeof FormSchema>, itinerary: GenerateItineraryTimelineOutput): BookingLink[] {
+    if (!formData?.destination) return [];
+
+    const destination = formData.destination;
+    const allActivities = itinerary.timeline?.flatMap(day => day.items)
+        .filter(item => item.type === 'activity')
+        .map(item => item.text)
+        .join(' ');
+
+    const keywords = new Set<string>();
+    const commonWords = new Set(['visit', 'explore', 'tour', 'of', 'the', 'a', 'an', 'in', 'and', 'at', 'for']);
+
+    // Extract keywords from activity descriptions
+    allActivities?.split(/\s|,\s|\.\s/).forEach(word => {
+        const cleanWord = word.replace(/[^a-zA-Z\s]/g, '').trim();
+        if (cleanWord.length > 3 && !commonWords.has(cleanWord.toLowerCase())) {
+            keywords.add(cleanWord);
+        }
+    });
+
+    // Extract proper nouns (potential landmarks)
+    itinerary.timeline?.forEach(day => {
+      day.items.forEach(item => {
+        const capitalizedWords = item.text.match(/\b([A-Z][a-z]{2,}(?:\s[A-Z][a-z]+)*)\b/g);
+        if (capitalizedWords) {
+          capitalizedWords.forEach(word => keywords.add(word));
+        }
+      })
+    })
+
+    const topKeyword = Array.from(keywords)[0] || destination;
+
+    return [
+      {
+        name: 'GetYourGuide',
+        url: `https://www.getyourguide.com/search?q=${encodeURIComponent(destination)}&activity_type=tour`,
+        icon: <MountainSnow className="h-8 w-8" />,
+      },
+      {
+        name: 'Klook',
+        url: `https://www.klook.com/search/things-to-do?query=${encodeURIComponent(destination)}`,
+        icon: <MapPin className="h-8 w-8" />,
+      },
+       {
+        name: `Tours for "${topKeyword}"`,
+        url: `https://www.getyourguide.com/search?q=${encodeURIComponent(topKeyword)}`,
+        icon: <Utensils className="h-8 w-8" />,
+      }
+    ];
+}
+
+
 export default function BookingsPage() {
-  const [itinerary, setItinerary] = useState<GenerateItineraryTimelineOutput | null>(null);
+  const [itineraryData, setItineraryData] = useState<ItineraryData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedData = sessionStorage.getItem('itineraryData');
+    const storedData = sessionStorage.getItem('itineraryPayload');
     if (storedData) {
       try {
         const parsedData = JSON.parse(storedData);
-        setItinerary(parsedData);
+        setItineraryData(parsedData);
       } catch (e) {
         console.error("Failed to parse itinerary data from session storage", e);
       }
     }
     setLoading(false);
   }, []);
+
+  const renderLinks = (links: BookingLink[], title: string) => {
+    if (links.length === 0) {
+      return <p className="text-muted-foreground">No relevant booking options were found for {title.toLowerCase()}.</p>;
+    }
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {links.map((link) => (
+          <a
+            href={link.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            key={link.name}
+            className="block p-4 bg-secondary/50 rounded-lg hover:bg-secondary transition-colors group"
+          >
+            <div className="flex items-center gap-4">
+              <div className="text-primary bg-primary/10 p-3 rounded-full">
+                {link.icon}
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg">{link.name}</h3>
+                <p className="text-sm text-muted-foreground flex items-center">
+                  Book on {link.name.split(' ')[0]} <ExternalLink className="ml-1.5 h-3 w-3 group-hover:translate-x-1 transition-transform" />
+                </p>
+              </div>
+            </div>
+          </a>
+        ))}
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -45,7 +187,7 @@ export default function BookingsPage() {
     );
   }
 
-  if (!itinerary) {
+  if (!itineraryData?.timeline || !itineraryData?.formData) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen text-center">
         <h2 className="text-2xl font-bold mb-4">No Itinerary Found</h2>
@@ -62,9 +204,10 @@ export default function BookingsPage() {
     );
   }
 
-  const travelLinks = extractLinks(itinerary.travelOptions);
-  const accommodationLinks = extractLinks(itinerary.accommodationOptions);
-  const attractionLinks = extractLinks(itinerary.touristAttractions);
+  const { timeline, formData } = itineraryData;
+  const travelLinks = getTravelLinks(formData);
+  const accommodationLinks = getAccommodationLinks(formData, timeline);
+  const attractionLinks = getAttractionLinks(formData, timeline);
 
   return (
     <main className="flex flex-col items-center min-h-screen w-full bg-background/80">
@@ -85,7 +228,9 @@ export default function BookingsPage() {
               Book Your Trip
             </h1>
             <p className="text-lg text-muted-foreground">
-              Here are the links to book your travel, accommodation, and activities.
+              Here are personalized links to book your travel, accommodation, and activities.
+              <br/>
+              <span className="text-sm">Please note: Bookings are made on third-party websites.</span>
             </p>
           </div>
 
@@ -98,20 +243,7 @@ export default function BookingsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {travelLinks.length > 0 ? (
-                  <ul className="space-y-4">
-                    {travelLinks.map((link, index) => (
-                      <li key={index} className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
-                        <span className="font-medium">{link.text}</span>
-                        <Button asChild variant="ghost" size="sm">
-                          <a href={link.url} target="_blank" rel="noopener noreferrer">
-                            Book Now <ExternalLink className="ml-2 h-4 w-4" />
-                          </a>
-                        </Button>
-                      </li>
-                    ))}
-                  </ul>
-                ) : <p className="text-muted-foreground">No travel links were found.</p>}
+                {renderLinks(travelLinks, "Travel")}
               </CardContent>
             </Card>
 
@@ -123,20 +255,7 @@ export default function BookingsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {accommodationLinks.length > 0 ? (
-                  <ul className="space-y-4">
-                    {accommodationLinks.map((link, index) => (
-                      <li key={index} className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
-                        <span className="font-medium">{link.text}</span>
-                        <Button asChild variant="ghost" size="sm">
-                          <a href={link.url} target="_blank" rel="noopener noreferrer">
-                            Book Now <ExternalLink className="ml-2 h-4 w-4" />
-                          </a>
-                        </Button>
-                      </li>
-                    ))}
-                  </ul>
-                ) : <p className="text-muted-foreground">No accommodation links were found.</p>}
+                {renderLinks(accommodationLinks, "Accommodation")}
               </CardContent>
             </Card>
             
@@ -148,20 +267,7 @@ export default function BookingsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {attractionLinks.length > 0 ? (
-                  <ul className="space-y-4">
-                    {attractionLinks.map((link, index) => (
-                      <li key={index} className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
-                        <span className="font-medium">{link.text}</span>
-                        <Button asChild variant="ghost" size="sm">
-                          <a href={link.url} target="_blank" rel="noopener noreferrer">
-                            View Details <ExternalLink className="ml-2 h-4 w-4" />
-                          </a>
-                        </Button>
-                      </li>
-                    ))}
-                  </ul>
-                ) : <p className="text-muted-foreground">No attraction links were found.</p>}
+                {renderLinks(attractionLinks, "Attractions")}
               </CardContent>
             </Card>
           </div>
@@ -170,3 +276,5 @@ export default function BookingsPage() {
     </main>
   );
 }
+
+    

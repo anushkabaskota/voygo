@@ -39,7 +39,11 @@ export default function Home() {
       if (result.success && result.data) {
         setItinerary(result.data.timeline);
         // Save to session storage for booking page
-        sessionStorage.setItem('itineraryData', JSON.stringify(result.data.timeline));
+        const payload = {
+          timeline: result.data.timeline,
+          formData: data
+        };
+        sessionStorage.setItem('itineraryPayload', JSON.stringify(payload));
         setAppState("results");
       } else {
         const error =
@@ -69,7 +73,7 @@ export default function Home() {
     setItinerary(null);
     setLastFormData(null);
     setErrorMessage("");
-    sessionStorage.removeItem('itineraryData');
+    sessionStorage.removeItem('itineraryPayload');
     setAppState("form");
   };
 
@@ -193,3 +197,5 @@ export default function Home() {
     </main>
   );
 }
+
+    
