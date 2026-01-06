@@ -6,10 +6,12 @@ import Link from 'next/link';
 import { Plane, Hotel, MapPin, ExternalLink, ArrowLeft, Building, MountainSnow, Utensils } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
 import type { GenerateItineraryTimelineOutput } from '@/ai/flows/types';
-import type { FormSchema } from '@/lib/types';
+import { type FormSchema } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Logo from '@/components/logo';
+import { z } from 'zod';
+
 
 type ItineraryData = {
   timeline: GenerateItineraryTimelineOutput;
@@ -83,51 +85,61 @@ function getAttractionLinks(formData: z.infer<typeof FormSchema>, itinerary: Gen
     if (!formData?.destination) return [];
 
     const destination = formData.destination;
-    const allActivities = itinerary.timeline?.flatMap(day => day.items)
-        .filter(item => item.type === 'activity')
-        .map(item => item.text)
-        .join(' ');
+    
+    const activityItems = itinerary.timeline?.flatMap(day => day.items).filter(item => item.type === 'activity') || [];
 
     const keywords = new Set<string>();
-    const commonWords = new Set(['visit', 'explore', 'tour', 'of', 'the', 'a', 'an', 'in', 'and', 'at', 'for']);
+    const commonWords = new Set(['visit', 'explore', 'discover', 'tour', 'of', 'the', 'a', 'an', 'in', 'and', 'at', 'for', 'with', 'by', 'on', 'from', 'to']);
 
-    // Extract keywords from activity descriptions
-    allActivities?.split(/\s|,\s|\.\s/).forEach(word => {
-        const cleanWord = word.replace(/[^a-zA-Z\s]/g, '').trim();
-        if (cleanWord.length > 3 && !commonWords.has(cleanWord.toLowerCase())) {
-            keywords.add(cleanWord);
+    activityItems.forEach(item => {
+        // Attempt to extract proper nouns or things after verbs like "Visit", "Explore"
+        const potentialLandmarkMatch = item.text.match(/(?:visit|explore|see|discover|tour)\s(the\s)?([\w\s\d'’]+)/i);
+        if (potentialLandmarkMatch && potentialLandmarkMatch[2]) {
+            let landmark = potentialLandmarkMatch[2].replace(/(\.|,)$/, '').trim();
+            // Avoid adding generic terms
+            if (landmark.toLowerCase() !== 'city' && landmark.toLowerCase() !== 'area' && landmark.split(' ').length < 4) {
+                 keywords.add(landmark);
+            }
+        }
+        
+        // Also add capitalized words as a fallback
+        const capitalizedWords = item.text.match(/\b([A-Z][a-z]{2,}(?:\s[A-Z][a-z]+)*)\b/g);
+        if (capitalizedWords) {
+            capitalizedWords.forEach(word => {
+              if (!commonWords.has(word.toLowerCase()) && word.split(' ').length < 4) {
+                 keywords.add(word.trim());
+              }
+            });
         }
     });
 
-    // Extract proper nouns (potential landmarks)
-    itinerary.timeline?.forEach(day => {
-      day.items.forEach(item => {
-        const capitalizedWords = item.text.match(/\b([A-Z][a-z]{2,}(?:\s[A-Z][a-z]+)*)\b/g);
-        if (capitalizedWords) {
-          capitalizedWords.forEach(word => keywords.add(word));
-        }
-      })
-    })
+    const uniqueKeywords = Array.from(keywords);
 
-    const topKeyword = Array.from(keywords)[0] || destination;
+    const links: BookingLink[] = [];
 
-    return [
-      {
+    links.push({
         name: 'GetYourGuide',
         url: `https://www.getyourguide.com/search?q=${encodeURIComponent(destination)}&activity_type=tour`,
         icon: <MountainSnow className="h-8 w-8" />,
-      },
-      {
+    });
+
+    links.push({
         name: 'Klook',
         url: `https://www.klook.com/search/things-to-do?query=${encodeURIComponent(destination)}`,
         icon: <MapPin className="h-8 w-8" />,
-      },
-       {
-        name: `Tours for "${topKeyword}"`,
-        url: `https://www.getyourguide.com/search?q=${encodeURIComponent(topKeyword)}`,
-        icon: <Utensils className="h-8 w-8" />,
-      }
-    ];
+    });
+
+    // Add a specific link for the first identified keyword, if any
+    if (uniqueKeywords.length > 0) {
+        const topKeyword = uniqueKeywords[0];
+        links.push({
+            name: `Tours for "${topKeyword}"`,
+            url: `https://www.getyourguide.com/search?q=${encodeURIComponent(topKeyword)}`,
+            icon: <Utensils className="h-8 w-8" />,
+        });
+    }
+
+    return links;
 }
 
 
@@ -140,6 +152,11 @@ export default function BookingsPage() {
     if (storedData) {
       try {
         const parsedData = JSON.parse(storedData);
+        // We need to parse date strings back into Date objects for the form data
+        if(parsedData.formData.dates.from && parsedData.formData.dates.to) {
+          parsedData.formData.dates.from = new Date(parsedData.formData.dates.from);
+          parsedData.formData.dates.to = new Date(parsedData.formData.dates.to);
+        }
         setItineraryData(parsedData);
       } catch (e) {
         console.error("Failed to parse itinerary data from session storage", e);
@@ -276,5 +293,3 @@ export default function BookingsPage() {
     </main>
   );
 }
-
-    
